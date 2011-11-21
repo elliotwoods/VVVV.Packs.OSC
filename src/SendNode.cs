@@ -18,6 +18,8 @@ using VVVV.Utils.OSC;
 
 namespace VVVV.Nodes.OSC
 {
+	enum SendMode { Auto, Manual };
+
 	#region PluginInfo
 	[PluginInfo(Name = "Send", Category = "OSC", Version = "Value", Help = "Send values as OSC packets across the graph ", Tags = "", AutoEvaluate = true)]
 	#endregion PluginInfo
@@ -32,6 +34,12 @@ namespace VVVV.Nodes.OSC
 
 		[Input("Channel", IsSingle = true, DefaultString = "Tx")]
 		IDiffSpread<string> FPinInChannel;
+
+		[Input("Send", Visibility = PinVisibility.OnlyInspector)]
+		ISpread<bool> FPinInSend;
+
+		[Config("Mode")]
+		IDiffSpread<SendMode> FConfigMode;
 
 		[Import]
 		ILogger FLogger;
@@ -54,17 +62,34 @@ namespace VVVV.Nodes.OSC
 			if (FPackets.Channel != FPinInChannel[0])
 				FPackets = new SRComms.Queue(FPinInChannel[0]);
 
-			if (FPinInAddress.IsChanged || FInput.IsChanged)
+
+			if (FConfigMode[0] == SendMode.Auto)
+			{
+				if (FPinInAddress.IsChanged || FInput.IsChanged)
+					for (int i = 0; i < SpreadMax; i++)
+					{
+						if (FPinInAddress[i] == "")
+							continue;
+
+						OSCMessage p = new OSCMessage(FPinInAddress[i]);
+						for (int j = 0; j < FInput[i].SliceCount; j++)
+							p.Append((float)FInput[i][j]);
+						FPackets.Add(p);
+					}
+			}
+			else
+			{
 				for (int i = 0; i < SpreadMax; i++)
 				{
-					if (FPinInAddress[i] == "")
-						continue;
-
-					OSCMessage p = new OSCMessage(FPinInAddress[i]);
-					for (int j = 0; j < FInput[i].SliceCount; j++)
-						p.Append((float)FInput[i][j]);
-					FPackets.Add(p);
+					if (FPinInSend[i])
+					{
+						OSCMessage p = new OSCMessage(FPinInAddress[i]);
+						for (int j = 0; j < FInput[i].SliceCount; j++)
+							p.Append((float)FInput[i][j]);
+						FPackets.Add(p);
+					}
 				}
+			}
 			if (FPackets.Count > 0)
 				SRComms.OnMessageSent(FPackets);
 			FPackets.Clear();
