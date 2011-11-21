@@ -39,6 +39,9 @@ namespace VVVV.Nodes.OSC
 		[Output("Address")]
 		ISpread<string> FPinOutAddress;
 
+		[Output("OnReceive")]
+		ISpread<bool> FPinOutOnReceive;
+
 		[Import]
 		ILogger FLogger;
 
@@ -68,25 +71,29 @@ namespace VVVV.Nodes.OSC
 
 		bool WrongAddress(OSCPacket p)
 		{
-			bool matches = true;
+			bool matches = false;
 			for (int j=0; j< FPinInAddress.SliceCount; j++)
 			{
 				switch(FPinInFilter[0])
 				{
 					case Filter.Matches:
-						matches &= p.Address == FPinInAddress[j];
+						matches |= p.Address == FPinInAddress[j];
 						break;
 
 					case Filter.Contains:
-						matches &= p.Address.Contains(FPinInAddress[j]);
+						matches |= p.Address.Contains(FPinInAddress[j]);
 						break;
 
 					case Filter.Starts:
-						matches &= p.Address.StartsWith(FPinInAddress[j]);
+						matches |= p.Address.StartsWith(FPinInAddress[j]);
 						break;
 
 					case Filter.Ends:
-						matches &= p.Address.EndsWith(FPinInAddress[j]);
+						matches |= p.Address.EndsWith(FPinInAddress[j]);
+						break;
+
+					case Filter.All:
+						matches = true;
 						break;
 				}
 			}
@@ -130,6 +137,7 @@ namespace VVVV.Nodes.OSC
 					FPinOutOutput.SliceCount = 0;
 					FPinOutAddress.SliceCount = 0;
 				}
+				FPinOutOnReceive[0] = count > 0;
 			}
 		}
 	}

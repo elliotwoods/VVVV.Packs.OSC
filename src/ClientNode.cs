@@ -20,7 +20,7 @@ namespace VVVV.Nodes.OSC
 {
 
 	#region PluginInfo
-	[PluginInfo(Name = "Client", Category = "OSC", Help = "Send OSC over network", Tags = "")]
+	[PluginInfo(Name = "Client", Category = "OSC", Help = "Send OSC over network", Tags = "", AutoEvaluate=true)]
 	#endregion PluginInfo
 	public class ClientNode : IPluginEvaluate, IDisposable
 	{
@@ -117,14 +117,17 @@ namespace VVVV.Nodes.OSC
 
 		void ThreadedFunction()
 		{
+			List<OSCPacket> copyList;
 			while (FRunning)
 			{
 				lock (FLockPackets)
 				{
-					foreach (var p in FPacketList)
-						FClient.Send(p);
+					copyList = new List<OSCPacket>(FPacketList);
 					FPacketList.Clear();
 				}
+
+				foreach (var p in copyList)
+					FClient.Send(p);
 			}
 		}
 

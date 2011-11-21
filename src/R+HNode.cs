@@ -33,12 +33,43 @@ namespace VVVV.Nodes.OSC
 		[Output("Output")]
 		ISpread<ISpread<float>> FPinOutOutput;
 
+		[Output("OnReceive")]
+		ISpread<bool> FPinOutOnReceive;
+
 		[Import]
 		ILogger FLogger;
 
+		class Message
+		{
+			public ISpread<float> Values;
+
+			public Message(int count)
+			{
+				Values = new Spread<float>(1);
+			}
+
+			private bool FNew = false;
+			public bool New
+			{
+				get
+				{
+					if (FNew)
+					{
+						FNew = false;
+						return true;
+					}
+					else
+						return false;
+				}
+				set
+				{
+					FNew = value;
+				}
+			}
+		}
 		object FLockPackets = new object();
 		SRComms.Queue FPackets = new SRComms.Queue("Rx");
-		Dictionary<string, ISpread<float>> FRegister = new Dictionary<string, ISpread<float>>();
+		Dictionary<string, Message> FRegister = new Dictionary<string, Message>();
 		#endregion fields & pins
 
 		[ImportingConstructor]
@@ -77,11 +108,17 @@ namespace VVVV.Nodes.OSC
 			}
 
 			FPinOutOutput.SliceCount = FPinInAddress.SliceCount;
+			FPinOutOnReceive.SliceCount = FPinInAddress.SliceCount;
+
 			for (int i = 0; i < FPinInAddress.SliceCount; i++)
+			{
 				if (FPinInAddress[i] == "")
 					FPinOutOutput[i].SliceCount = 0;
 				else
-					FPinOutOutput[i] = FRegister[FPinInAddress[i]];
+					FPinOutOutput[i] = FRegister[FPinInAddress[i]].Values;
+
+				FPinOutOnReceive[i] = FRegister[FPinInAddress[i]].New;
+			}
 		}
 
 		void ReassignRegister()
@@ -89,7 +126,7 @@ namespace VVVV.Nodes.OSC
 			for (int i=0; i<FPinInAddress.SliceCount; i++)
 			{
 				if (!FRegister.ContainsKey(FPinInAddress[i]))
-					FRegister.Add(FPinInAddress[i], new Spread<float>(1));
+					FRegister.Add(FPinInAddress[i], new Message(1));
 			}
 
 			bool matches;
@@ -115,11 +152,13 @@ namespace VVVV.Nodes.OSC
 			{
 				if (FRegister.ContainsKey(p.Address))
 				{
+					FRegister[p.Address].New = true;
+
 					int count = p.Values.Count;
-					FRegister[p.Address].SliceCount = count;
+					FRegister[p.Address].Values.SliceCount = count;
 					for (int i = 0; i < count; i++)
 					{
-						FRegister[p.Address][i] = p.Values[i].GetType() == typeof(float) ? (float)p.Values[i] : 0;
+						FRegister[p.Address].Values[i] = p.Values[i].GetType() == typeof(float) ? (float)p.Values[i] : 0;
 					}
 				}
 			}

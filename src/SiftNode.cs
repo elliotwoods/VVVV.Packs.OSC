@@ -19,7 +19,7 @@ using VVVV.Utils.OSC;
 namespace VVVV.Nodes.OSC
 {
 
-	enum Filter {Matches, Contains, Starts, Ends};
+	enum Filter {Matches, Contains, Starts, Ends, All};
 
 	#region PluginInfo
 	[PluginInfo(Name = "Sift", Category = "OSC", Help = "Sift packets for an address", Tags = "")]
@@ -60,25 +60,29 @@ namespace VVVV.Nodes.OSC
 			if (FPinInput.SliceCount > 0 && FPinInput[0] != null)
 				for (int i = 0; i < FPinInput.SliceCount; i++)
 				{
-					bool matches = true;
+					bool matches = false;
 					for (int j=0; j< FPinInAddress.SliceCount; j++)
 					{
 						switch(FPinInFilter[0])
 						{
 							case Filter.Matches:
-								matches &= FPinInput[i].Address == FPinInAddress[j];
+								matches |= FPinInput[i].Address == FPinInAddress[j];
 								break;
 
 							case Filter.Contains:
-								matches &= FPinInput[i].Address.Contains(FPinInAddress[j]);
+								matches |= FPinInput[i].Address.Contains(FPinInAddress[j]);
 								break;
 
 							case Filter.Starts:
-								matches &= FPinInput[i].Address.StartsWith(FPinInAddress[j]);
+								matches |= FPinInput[i].Address.StartsWith(FPinInAddress[j]);
 								break;
 
 							case Filter.Ends:
-								matches &= FPinInput[i].Address.EndsWith(FPinInAddress[j]);
+								matches |= FPinInput[i].Address.EndsWith(FPinInAddress[j]);
+								break;
+
+							case Filter.All:
+								matches = true;
 								break;
 						}
 					}
