@@ -123,6 +123,7 @@ namespace VVVV.Nodes.OSC
 					}
 				}
 			}
+			FPackets.Clear();
 		}
 	}
 }

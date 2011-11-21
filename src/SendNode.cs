@@ -25,17 +25,17 @@ namespace VVVV.Nodes.OSC
 	{
 		#region fields & pins
 		[Input("Input")]
-		ISpread<ISpread<double>> FInput;
+		IDiffSpread<ISpread<double>> FInput;
 
 		[Input("Address")]
-		ISpread<string> FPinInAddress;
+		IDiffSpread<string> FPinInAddress;
 
-		[Input("Channel", IsSingle = true, DefaultString = "Rx")]
+		[Input("Channel", IsSingle = true, DefaultString = "Tx")]
 		IDiffSpread<string> FPinInChannel;
 
 		[Import]
 		ILogger FLogger;
-		SRComms.Queue FPackets = new SRComms.Queue("Rx");
+		SRComms.Queue FPackets = new SRComms.Queue("Tx");
 		#endregion fields & pins
 
 		[ImportingConstructor]
@@ -54,12 +54,17 @@ namespace VVVV.Nodes.OSC
 			if (FPackets.Channel != FPinInChannel[0])
 				FPackets = new SRComms.Queue(FPinInChannel[0]);
 
-			for (int i = 0; i < SpreadMax; i++)
-			{
-				OSCPacket p = new OSCMessage(FPinInAddress[i]);
-				for (int j=0; j<FInput[i].SliceCount; j++)
-					p.Values.Add(FInput[i][j]);
-			}
+			if (FPinInAddress.IsChanged || FInput.IsChanged)
+				for (int i = 0; i < SpreadMax; i++)
+				{
+					if (FPinInAddress[i] == "")
+						continue;
+
+					OSCMessage p = new OSCMessage(FPinInAddress[i]);
+					for (int j = 0; j < FInput[i].SliceCount; j++)
+						p.Append((float)FInput[i][j]);
+					FPackets.Add(p);
+				}
 			if (FPackets.Count > 0)
 				SRComms.OnMessageSent(FPackets);
 			FPackets.Clear();

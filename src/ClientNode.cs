@@ -20,19 +20,22 @@ namespace VVVV.Nodes.OSC
 {
 
 	#region PluginInfo
-	[PluginInfo(Name = "Server", Category = "OSC", Help = "Listen for OSC", Tags = "")]
+	[PluginInfo(Name = "Client", Category = "OSC", Help = "Send OSC over network", Tags = "")]
 	#endregion PluginInfo
-	public class ServerNode : IPluginEvaluate, IDisposable
+	public class ClientNode : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
-		[Input("Port", IsSingle = true)]
+		[Input("Input")]
+		ISpread<OSCPacket> FPinInput;
+
+		[Input("Remote host", IsSingle=true, StringType = StringType.IP, DefaultString="localhost")]
+		IDiffSpread<string> FPinInRemote;
+
+		[Input("Port", IsSingle = true, DefaultValue=4444)]
 		IDiffSpread<int> FPinInPort;
 
 		[Input("Enabled", IsSingle = true)]
 		ISpread<bool> FPinInEnabled;
-
-		[Output("Output")]
-		ISpread<OSCPacket> FPinOutOutput;
 
 		[Output("Status")]
 		ISpread<String> FPinOutStatus;
@@ -40,18 +43,17 @@ namespace VVVV.Nodes.OSC
 		[Import]
 		ILogger FLogger;
 
-		OSCReceiver FServer;
+		OSCTransmitter FClient;
 
 		Thread FThread;
 		bool FRunning = false;
 		
-		Object FLockList = new Object();
+		Object FLockPackets = new Object();
 		List<OSCPacket> FPacketList = new List<OSCPacket>();
-
 		#endregion fields & pins
 
 		[ImportingConstructor]
-		public ServerNode(IPluginHost host)
+		public ClientNode(IPluginHost host)
 		{
 		}
 
@@ -63,12 +65,21 @@ namespace VVVV.Nodes.OSC
 		//called when data for any output pin is requested
 		public void Evaluate(int SpreadMax)
 		{
-			if (FPinInEnabled[0] && !FRunning || FPinInPort.IsChanged && FRunning)
+			if (FPinInEnabled[0] && !FRunning || FPinInPort.IsChanged && FRunning || FPinInRemote.IsChanged && FRunning)
 				Open();
 			else if (!FPinInEnabled[0] && FRunning)
 				Close();
 
-			Output();
+			if (FPinInput[0] == null || !FRunning)
+				return;
+
+			lock (FLockPackets)
+			{
+				for (int i = 0; i < FPinInput.SliceCount; i++)
+				{
+					FPacketList.Add(FPinInput[i]);
+				}
+			}
 		}
 
 		void Open()
@@ -76,8 +87,8 @@ namespace VVVV.Nodes.OSC
 			Close();
 			try
 			{
-				FServer = new OSCReceiver(FPinInPort[0]);
-				FServer.Connect();
+				FClient = new OSCTransmitter(FPinInRemote[0], FPinInPort[0]);
+				FClient.Connect();
 
 				FRunning = true;
 				FThread = new Thread(ThreadedFunction);
@@ -99,45 +110,21 @@ namespace VVVV.Nodes.OSC
 				FRunning = false;
 				FThread.Abort();
 
-				FServer.Close();
-				FServer = null;
-			}
-		}
-
-		void Output()
-		{
-			if (!FRunning)
-				return;
-
-			lock (FPacketList)
-			{
-				int count = FPacketList.Count;
-				if (count > 0)
-				{
-					FPinOutOutput.SliceCount = count;
-					for (int i = 0; i < count; i++)
-						FPinOutOutput[i] = FPacketList[i];
-				}
-				else
-				{
-					FPinOutOutput.SliceCount = 1;
-					FPinOutOutput[0] = null;
-				}
-
-				FPacketList.Clear();
+				FClient.Close();
+				FClient = null;
 			}
 		}
 
 		void ThreadedFunction()
 		{
-			OSCPacket p;
-
 			while (FRunning)
 			{
-				p = FServer.Receive();
-
-				lock (FLockList)
-					FPacketList.Add(p);
+				lock (FLockPackets)
+				{
+					foreach (var p in FPacketList)
+						FClient.Send(p);
+					FPacketList.Clear();
+				}
 			}
 		}
 
