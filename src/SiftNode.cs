@@ -66,23 +66,19 @@ namespace VVVV.Nodes.OSC
 						switch(FPinInFilter[0])
 						{
 							case Filter.Matches:
-								if (FPinInput[i].Address == FPinInAddress[j])
-									matches = true;
+								matches &= FPinInput[i].Address == FPinInAddress[j];
 								break;
 
 							case Filter.Contains:
-								if (FPinInput[i].Address.Contains(FPinInAddress[j]))
-									matches = true;
+								matches &= FPinInput[i].Address.Contains(FPinInAddress[j]);
 								break;
 
 							case Filter.Starts:
-								if (FPinInput[i].Address.StartsWith(FPinInAddress[j]))
-									matches = true;
+								matches &= FPinInput[i].Address.StartsWith(FPinInAddress[j]);
 								break;
 
 							case Filter.Ends:
-								if (FPinInput[i].Address.EndsWith(FPinInAddress[j]))
-									matches = true;
+								matches &= FPinInput[i].Address.EndsWith(FPinInAddress[j]);
 								break;
 						}
 					}

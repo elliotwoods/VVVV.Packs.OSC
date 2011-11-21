@@ -19,16 +19,25 @@ using VVVV.Utils.OSC;
 namespace VVVV.Nodes.OSC
 {
 	#region PluginInfo
-	[PluginInfo(Name = "R", Category = "OSC", Help = "Receive OSC packets from across the graph", Tags = "", AutoEvaluate = true)]
+	[PluginInfo(Name = "Receive", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
 	#endregion PluginInfo
-	public class RNode : IPluginEvaluate, IDisposable
+	public class ReceiveValueNode : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
 		[Input("Channel", IsSingle = true, DefaultString = "Rx")]
 		ISpread<string> FPinInChannel;
 
+		[Input("Address")]
+		ISpread<string> FPinInAddress;
+
+		[Input("Mode", IsSingle=true)]
+		ISpread<Filter> FPinInFilter;
+
 		[Output("Output")]
-		ISpread<OSCPacket> FPinOutOutput;
+		ISpread<ISpread<float>> FPinOutOutput;
+
+		[Output("Address")]
+		ISpread<string> FPinOutAddress;
 
 		[Import]
 		ILogger FLogger;
@@ -38,7 +47,7 @@ namespace VVVV.Nodes.OSC
 		#endregion fields & pins
 
 		[ImportingConstructor]
-		public RNode(IPluginHost host)
+		public ReceiveValueNode(IPluginHost host)
 		{
 			SRComms.MessageSent+=new EventHandler(SRComms_MessageSent);
 		}
@@ -53,6 +62,35 @@ namespace VVVV.Nodes.OSC
 				lock (FLockPackets)
 					foreach (var p in q)
 						FPackets.Add(p);
+
+			FPackets.RemoveWhere(WrongAddress);
+		}
+
+		bool WrongAddress(OSCPacket p)
+		{
+			bool matches = true;
+			for (int j=0; j< FPinInAddress.SliceCount; j++)
+			{
+				switch(FPinInFilter[0])
+				{
+					case Filter.Matches:
+						matches &= p.Address == FPinInAddress[j];
+						break;
+
+					case Filter.Contains:
+						matches &= p.Address.Contains(FPinInAddress[j]);
+						break;
+
+					case Filter.Starts:
+						matches &= p.Address.StartsWith(FPinInAddress[j]);
+						break;
+
+					case Filter.Ends:
+						matches &= p.Address.EndsWith(FPinInAddress[j]);
+						break;
+				}
+			}
+			return !matches;
 		}
 
 		public void Dispose()
@@ -69,19 +107,28 @@ namespace VVVV.Nodes.OSC
 			{
 				int count = FPackets.Count;
 				FPinOutOutput.SliceCount = count;
+				FPinOutAddress.SliceCount = count;
+
 				if (count > 0)
 				{
 					int i = 0;
 					foreach (var p in FPackets)
 					{
-						FPinOutOutput[i++] = p;
+						FPinOutOutput[i].SliceCount = p.Values.Count;
+						FPinOutAddress[i] = p.Address;
+
+						for (int j = 0; j < p.Values.Count; j++)
+						{
+							FPinOutOutput[i][j] = p.Values[j].GetType() == typeof(float) ? (float)p.Values[j] : 0;
+						}
+						i++;
 					}
 					FPackets.Clear();
 				}
 				else
 				{
-					FPinOutOutput.SliceCount = 1;
-					FPinOutOutput[0] = null;
+					FPinOutOutput.SliceCount = 0;
+					FPinOutAddress.SliceCount = 0;
 				}
 			}
 		}
