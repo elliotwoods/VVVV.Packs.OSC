@@ -50,6 +50,9 @@ namespace VVVV.Nodes.OSC
 		
 		Object FLockPackets = new Object();
 		List<OSCPacket> FPacketList = new List<OSCPacket>();
+
+		Object FLockStatus = new Object();
+		String FStatus = "";
 		#endregion fields & pins
 
 		[ImportingConstructor]
@@ -70,37 +73,28 @@ namespace VVVV.Nodes.OSC
 			else if (!FPinInEnabled[0] && FRunning)
 				Close();
 
-			if (FPinInput[0] == null || !FRunning)
-				return;
-
-			lock (FLockPackets)
-			{
-				for (int i = 0; i < FPinInput.SliceCount; i++)
+			if (FPinInput[0] != null && FRunning)
+				lock (FLockPackets)
 				{
-					FPacketList.Add(FPinInput[i]);
+					for (int i = 0; i < FPinInput.SliceCount; i++)
+					{
+						FPacketList.Add(FPinInput[i]);
+					}
 				}
+
+			lock (FLockStatus)
+			{
+				if (FPinOutStatus[0] != FStatus)
+					FPinOutStatus[0] = FStatus;
 			}
 		}
 
 		void Open()
 		{
 			Close();
-			try
-			{
-				FClient = new OSCTransmitter(FPinInRemote[0], FPinInPort[0]);
-				FClient.Connect();
+			FThread = new Thread(ThreadedFunction);
+			FThread.Start();
 
-				FRunning = true;
-				FThread = new Thread(ThreadedFunction);
-				FThread.Start();
-
-				FPinOutStatus[0] = "OK";
-			}
-			catch (Exception e)
-			{
-				Close();
-				FPinOutStatus[0] = e.Message;
-			}
 		}
 
 		void Close()
@@ -117,6 +111,26 @@ namespace VVVV.Nodes.OSC
 
 		void ThreadedFunction()
 		{
+			try
+			{
+				FClient = new OSCTransmitter(FPinInRemote[0], FPinInPort[0]);
+				FClient.Connect();
+
+				FRunning = true;
+				lock (FLockStatus)
+					FStatus = "OK";
+			}
+			catch (Exception e)
+			{
+				lock (FLockStatus)
+					FStatus = e.Message;
+
+				if (FClient != null)
+					FClient.Close();
+				FRunning = false;
+				return;
+			}
+
 			List<OSCPacket> copyList;
 			while (FRunning)
 			{

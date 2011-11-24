@@ -92,7 +92,7 @@
     <Compile Include="src\AsValue.cs" />
     <Compile Include="src\ClientNode.cs" />
     <Compile Include="src\SendNode.cs" />
-    <Compile Include="src\ReceiveNode.cs" />
+    <Compile Include="src\ReceiveValueNode.cs" />
     <Compile Include="src\R+HNode.cs" />
     <Compile Include="src\CountNode.cs" />
     <Compile Include="src\SiftNode.cs" />

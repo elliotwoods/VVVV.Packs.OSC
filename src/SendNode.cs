@@ -20,14 +20,11 @@ namespace VVVV.Nodes.OSC
 {
 	enum SendMode { Auto, Manual };
 
-	#region PluginInfo
-	[PluginInfo(Name = "Send", Category = "OSC", Version = "Value", Help = "Send values as OSC packets across the graph ", Tags = "", AutoEvaluate = true)]
-	#endregion PluginInfo
-	public class SendValueNode : IPluginEvaluate, IDisposable
+	public class SendNode<T> : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
 		[Input("Input")]
-		IDiffSpread<ISpread<double>> FInput;
+		IDiffSpread<ISpread<T>> FInput;
 
 		[Input("Address")]
 		IDiffSpread<string> FPinInAddress;
@@ -45,12 +42,6 @@ namespace VVVV.Nodes.OSC
 		ILogger FLogger;
 		SRComms.Queue FPackets = new SRComms.Queue("Tx");
 		#endregion fields & pins
-
-		[ImportingConstructor]
-		public SendValueNode(IPluginHost host)
-		{
-		}
-
 
 		public void Dispose()
 		{
@@ -73,7 +64,7 @@ namespace VVVV.Nodes.OSC
 
 						OSCMessage p = new OSCMessage(FPinInAddress[i]);
 						for (int j = 0; j < FInput[i].SliceCount; j++)
-							p.Append((float)FInput[i][j]);
+							p.Append((T)FInput[i][j]);
 						FPackets.Add(p);
 					}
 			}
@@ -85,7 +76,7 @@ namespace VVVV.Nodes.OSC
 					{
 						OSCMessage p = new OSCMessage(FPinInAddress[i]);
 						for (int j = 0; j < FInput[i].SliceCount; j++)
-							p.Append((float)FInput[i][j]);
+							p.Append((T)FInput[i][j]);
 						FPackets.Add(p);
 					}
 				}
@@ -94,5 +85,21 @@ namespace VVVV.Nodes.OSC
 				SRComms.OnMessageSent(FPackets);
 			FPackets.Clear();
 		}
+	}
+
+	#region PluginInfo
+	[PluginInfo(Name = "Send", Category = "OSC", Version = "Value", Help = "Send values as OSC packets across the graph ", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class SendValueNode : SendNode<float>
+	{
+
+	}
+
+	#region PluginInfo
+	[PluginInfo(Name = "Send", Category = "OSC", Version = "String", Help = "Send strings as OSC packets across the graph ", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class SendStringNode : SendNode<string>
+	{
+
 	}
 }
