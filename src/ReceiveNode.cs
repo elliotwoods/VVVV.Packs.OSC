@@ -18,10 +18,7 @@ using VVVV.Utils.OSC;
 
 namespace VVVV.Nodes.OSC
 {
-	#region PluginInfo
-	[PluginInfo(Name = "Receive", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
-	#endregion PluginInfo
-	public class ReceiveValueNode : IPluginEvaluate, IDisposable
+	public abstract class ReceiveNode<T> : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
 		[Input("Channel", IsSingle = true, DefaultString = "Rx")]
@@ -34,7 +31,7 @@ namespace VVVV.Nodes.OSC
 		ISpread<Filter> FPinInFilter;
 
 		[Output("Output")]
-		ISpread<ISpread<float>> FPinOutOutput;
+		ISpread<ISpread<T>> FPinOutOutput;
 
 		[Output("Address")]
 		ISpread<string> FPinOutAddress;
@@ -50,7 +47,7 @@ namespace VVVV.Nodes.OSC
 		#endregion fields & pins
 
 		[ImportingConstructor]
-		public ReceiveValueNode(IPluginHost host)
+		public ReceiveNode()
 		{
 			SRComms.MessageSent+=new EventHandler(SRComms_MessageSent);
 		}
@@ -126,7 +123,7 @@ namespace VVVV.Nodes.OSC
 
 						for (int j = 0; j < p.Values.Count; j++)
 						{
-							FPinOutOutput[i][j] = p.Values[j].GetType() == typeof(float) ? (float)p.Values[j] : 0;
+							FPinOutOutput[i][j] = p.Values[j].GetType() == typeof(T) ? (T)p.Values[j] : GetDefault();
 						}
 						i++;
 					}
@@ -139,6 +136,32 @@ namespace VVVV.Nodes.OSC
 				}
 				FPinOutOnReceive[0] = count > 0;
 			}
+		}
+
+		protected abstract T GetDefault();
+	}
+
+
+	#region PluginInfo
+	[PluginInfo(Name = "Receive", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class ReceiveValueNode : ReceiveNode<float>
+	{
+		protected override float GetDefault()
+		{
+			return 0.0f;
+		}
+	}
+
+
+	#region PluginInfo
+	[PluginInfo(Name = "Receive", Category = "OSC", Version = "String", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class ReceiveStringNode : ReceiveNode<string>
+	{
+		protected override string GetDefault()
+		{
+			return "";
 		}
 	}
 }

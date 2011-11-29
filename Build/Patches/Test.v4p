@@ -186,10 +186,6 @@
    <BOUNDS height="5010" left="6060" top="7515" type="Window" width="6240">
    </BOUNDS>
    </NODE>
-   <NODE componentmode="Hidden" filename="..\Plugins\VVVV.Nodes.OSC.dll" id="20" nodename="Receive (OSC Value)" systemname="Receive (OSC Value)">
-   <BOUNDS height="100" left="1350" top="3405" type="Node" width="100">
-   </BOUNDS>
-   </NODE>
    <NODE componentmode="Hidden" filename="..\Plugins\VVVV.Nodes.OSC.dll" id="21" nodename="R+H (OSC Value)" systemname="R+H (OSC Value)">
    <BOUNDS height="270" left="1500" top="1695" type="Node" width="1320">
    </BOUNDS>
@@ -319,7 +315,7 @@
    <NODE componentmode="InABox" id="32" nodename="IOBox (String)" systemname="IOBox (String)">
    <BOUNDS height="270" left="11250" top="1680" type="Node" width="795">
    </BOUNDS>
-   <BOUNDS height="270" left="11250" top="1680" type="Box" width="795">
+   <BOUNDS height="270" left="11250" top="1680" type="Box" width="1380">
    </BOUNDS>
    <PIN encoded="0" pinname="Input String" slicecount="1" visible="0" values="192.168.0.141">
    </PIN>
@@ -371,7 +367,7 @@
    </BOUNDS>
    <PIN pinname="Rows" slicecount="1" values="4">
    </PIN>
-   <PIN pinname="Y Input Value" slicecount="4" values="-0.64,-0.06,-0.92,1.44">
+   <PIN pinname="Y Input Value" slicecount="4" values="-0.64,-0.43,-1.27,1.44">
    </PIN>
    <PIN pinname="Vector Size" slicecount="1" values="4">
    </PIN>
@@ -381,5 +377,31 @@
    </PIN>
    </NODE>
    <LINK dstnodeid="34" dstpinname="Input" srcnodeid="35" srcpinname="Y Output Value">
+   </LINK>
+   <NODE systemname="Receive (OSC Value)" filename="..\Plugins\VVVV.Nodes.OSC.dll" nodename="Receive (OSC Value)" componentmode="Hidden" id="36">
+   <BOUNDS type="Node" left="375" top="2160" width="100" height="100">
+   </BOUNDS>
+   <PIN pinname="Address" visible="1">
+   </PIN>
+   <PIN pinname="Output" visible="1">
+   </PIN>
+   </NODE>
+   <LINK srcnodeid="24" srcpinname="Output" dstnodeid="36" dstpinname="Address">
+   </LINK>
+   <NODE componentmode="InABox" id="37" nodename="IOBox (Value Advanced)" systemname="IOBox (Value Advanced)">
+   <BOUNDS height="100" left="375" top="2910" type="Node" width="100">
+   </BOUNDS>
+   <BOUNDS height="960" left="375" top="2910" type="Box" width="795">
+   </BOUNDS>
+   <PIN pinname="Rows" slicecount="1" values="4">
+   </PIN>
+   <PIN pinname="Y Input Value" visible="1">
+   </PIN>
+   <PIN pinname="Vector Size" slicecount="1" values="4">
+   </PIN>
+   <PIN encoded="0" pinname="Default" slicecount="1" values="|0, 0, 0, 1|">
+   </PIN>
+   </NODE>
+   <LINK srcnodeid="36" srcpinname="Output" dstnodeid="37" dstpinname="Y Input Value">
    </LINK>
    </PATCH>

@@ -18,10 +18,7 @@ using VVVV.Utils.OSC;
 
 namespace VVVV.Nodes.OSC
 {
-	#region PluginInfo
-	[PluginInfo(Name = "R+H", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
-	#endregion PluginInfo
-	public class ReceiveHoldValueNode : IPluginEvaluate, IDisposable
+	public abstract class ReceiveHoldNode<T> : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
 		[Input("Channel", IsSingle = true, DefaultString = "Rx")]
@@ -31,7 +28,7 @@ namespace VVVV.Nodes.OSC
 		IDiffSpread<string> FPinInAddress;
 
 		[Output("Output")]
-		ISpread<ISpread<float>> FPinOutOutput;
+		ISpread<ISpread<T>> FPinOutOutput;
 
 		[Output("OnReceive")]
 		ISpread<bool> FPinOutOnReceive;
@@ -41,11 +38,11 @@ namespace VVVV.Nodes.OSC
 
 		class Message
 		{
-			public ISpread<float> Values;
+			public ISpread<T> Values;
 
 			public Message(int count)
 			{
-				Values = new Spread<float>(1);
+				Values = new Spread<T>(1);
 			}
 
 			private bool FNew = false;
@@ -73,7 +70,7 @@ namespace VVVV.Nodes.OSC
 		#endregion fields & pins
 
 		[ImportingConstructor]
-		public ReceiveHoldValueNode(IPluginHost host)
+		public ReceiveHoldNode()
 		{
 			SRComms.MessageSent+=new EventHandler(SRComms_MessageSent);
 		}
@@ -158,11 +155,35 @@ namespace VVVV.Nodes.OSC
 					FRegister[p.Address].Values.SliceCount = count;
 					for (int i = 0; i < count; i++)
 					{
-						FRegister[p.Address].Values[i] = p.Values[i].GetType() == typeof(float) ? (float)p.Values[i] : 0;
+						FRegister[p.Address].Values[i] = p.Values[i].GetType() == typeof(T) ? (T)p.Values[i] : GetDefault();
 					}
 				}
 			}
 			FPackets.Clear();
+		}
+
+		protected abstract T GetDefault();
+	}
+
+	#region PluginInfo
+	[PluginInfo(Name = "R+H", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class ReceiveHoldValueNode : ReceiveHoldNode<float>
+	{
+		protected override float GetDefault()
+		{
+			return 0;
+		}
+	}
+
+	#region PluginInfo
+	[PluginInfo(Name = "R+H", Category = "OSC", Version = "String", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class ReceiveHoldStringNode : ReceiveHoldNode<string>
+	{
+		protected override string GetDefault()
+		{
+			return "";
 		}
 	}
 }

@@ -58,10 +58,12 @@
   <ItemGroup>
     <Reference Include="SlimDX, Version=2.0.11.43, Culture=neutral, PublicKeyToken=b1b0c32fd1ffe4f9, processorArchitecture=x86">
       <HintPath>..\..\..\vvvv\vvvv_45beta26\bin\managed\SlimDX.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition">
       <HintPath>..\..\..\vvvv\vvvv_45beta26\bin\managed\System.ComponentModel.Composition.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -77,22 +79,26 @@
     <Reference Include="System.Xml" />
     <Reference Include="VVVV.Core">
       <HintPath>..\..\..\vvvv\vvvv_45beta26\bin\managed\VVVV.Core.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="VVVV.PluginInterfaces">
       <HintPath>..\..\..\vvvv\vvvv_45beta26\bin\managed\VVVV.PluginInterfaces.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="VVVV.Utils">
       <HintPath>..\..\..\vvvv\vvvv_45beta26\bin\managed\VVVV.Utils.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="VVVV.Utils3rdParty">
       <HintPath>..\..\..\vvvv\vvvv_45beta26\bin\managed\VVVV.Utils3rdParty.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\AsValue.cs" />
     <Compile Include="src\ClientNode.cs" />
     <Compile Include="src\SendNode.cs" />
-    <Compile Include="src\ReceiveValueNode.cs" />
+    <Compile Include="src\ReceiveNode.cs" />
     <Compile Include="src\R+HNode.cs" />
     <Compile Include="src\CountNode.cs" />
     <Compile Include="src\SiftNode.cs" />
