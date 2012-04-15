@@ -25,7 +25,7 @@ namespace VVVV.Nodes.OSC
 	public class ServerNode : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
-		[Input("Port", IsSingle = true)]
+		[Input("Port", IsSingle = true, DefaultValue=4444)]
 		IDiffSpread<int> FPinInPort;
 
 		[Input("Enabled", IsSingle = true)]

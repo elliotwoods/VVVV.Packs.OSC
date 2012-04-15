@@ -28,7 +28,7 @@ namespace VVVV.Nodes.OSC
 		[Input("Input")]
 		ISpread<OSCPacket> FPinInput;
 
-		[Input("Remote host", IsSingle=true, StringType = StringType.IP, DefaultString="localhost")]
+		[Input("Remote host", IsSingle=true, StringType = StringType.IP, DefaultString="127.0.0.1")]
 		IDiffSpread<string> FPinInRemote;
 
 		[Input("Port", IsSingle = true, DefaultValue=4444)]
