@@ -136,8 +136,22 @@ namespace VVVV.Nodes.OSC
 			{
 				p = FServer.Receive();
 
-				lock (FLockList)
-					FPacketList.Add(p);
+				if (p.IsBundle())
+				{
+					lock (FLockList)
+					{
+						foreach(var packet in p.Values) {
+							var packet2 = packet as OSCPacket;
+							if (packet2 != null)
+								FPacketList.Add(packet2);
+						}
+					}
+				}
+				else
+				{
+					lock (FLockList)
+						FPacketList.Add(p);
+				}
 			}
 		}
 
