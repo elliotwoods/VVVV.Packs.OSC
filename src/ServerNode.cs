@@ -106,9 +106,6 @@ namespace VVVV.Nodes.OSC
 
 		void Output()
 		{
-			if (!FRunning)
-				return;
-
 			lock (FPacketList)
 			{
 				int count = FPacketList.Count;

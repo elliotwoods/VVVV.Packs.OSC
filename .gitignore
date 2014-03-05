@@ -22,6 +22,7 @@
 *.lib
 *.sbr
 *.sdf
+*.pdb
 *.opensdf
 ipch/
 obj/
@@ -36,6 +37,9 @@ _ReSharper*/
 *.resharper
 [Tt]est[Rr]esult*
 
+#Archives
+.zip
+.7z
 
 #Subversion files
 .svn

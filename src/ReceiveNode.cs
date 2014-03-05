@@ -21,8 +21,8 @@ namespace VVVV.Nodes.OSC
 	public abstract class ReceiveNode<T> : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
-		[Input("Channel", IsSingle = true, DefaultString = "Rx")]
-		ISpread<string> FPinInChannel;
+		[Input("Message")]
+		ISpread<OSCPacket> FPinInInput;
 
 		[Input("Address")]
 		ISpread<string> FPinInAddress;
@@ -41,29 +41,11 @@ namespace VVVV.Nodes.OSC
 
 		[Import]
 		ILogger FLogger;
-
-		object FLockPackets = new object();
-		SRComms.Queue FPackets = new SRComms.Queue("Rx");
 		#endregion fields & pins
 
 		[ImportingConstructor]
 		public ReceiveNode()
 		{
-			SRComms.MessageSent+=new EventHandler(SRComms_MessageSent);
-		}
-
-		void  SRComms_MessageSent(object sender, EventArgs e)
-		{
-			var q = sender as SRComms.Queue;
-			if (q == null)
-				return;
-
-			if (q.Channel == FPackets.Channel)
-				lock (FLockPackets)
-					foreach (var p in q)
-						FPackets.Add(p);
-
-			FPackets.RemoveWhere(WrongAddress);
 		}
 
 		bool WrongAddress(OSCPacket p)
@@ -104,38 +86,47 @@ namespace VVVV.Nodes.OSC
 		//called when data for any output pin is requested
 		public void Evaluate(int SpreadMax)
 		{
-			if (FPackets.Channel != FPinInChannel[0])
-				FPackets = new SRComms.Queue(FPinInChannel[0]);
-
-			lock (FLockPackets)
+			var filteredMessages = new List<OSCPacket>();
+			foreach (var message in FPinInInput)
 			{
-				int count = FPackets.Count;
-				FPinOutOutput.SliceCount = count;
-				FPinOutAddress.SliceCount = count;
-
-				if (count > 0)
-				{
-					int i = 0;
-					foreach (var p in FPackets)
-					{
-						FPinOutOutput[i].SliceCount = p.Values.Count;
-						FPinOutAddress[i] = p.Address;
-
-						for (int j = 0; j < p.Values.Count; j++)
-						{
-							FPinOutOutput[i][j] = p.Values[j].GetType() == typeof(T) ? (T)p.Values[j] : GetDefault();
-						}
-						i++;
+				if (message == null) {
+					continue;
 					}
-					FPackets.Clear();
-				}
-				else
+				if (!WrongAddress(message))
 				{
-					FPinOutOutput.SliceCount = 0;
-					FPinOutAddress.SliceCount = 0;
+					filteredMessages.Add(message);
+					if (filteredMessages.Count > 3)
+					{
+						break;
+					}
 				}
-				FPinOutOnReceive[0] = count > 0;
 			}
+
+			int count = filteredMessages.Count;
+			FPinOutOutput.SliceCount = count;
+			FPinOutAddress.SliceCount = count;
+
+			if (count > 0)
+			{
+				int i = 0;
+				foreach (var p in filteredMessages)
+				{
+					FPinOutOutput[i].SliceCount = p.Values.Count;
+					FPinOutAddress[i] = p.Address;
+
+					for (int j = 0; j < p.Values.Count; j++)
+					{
+						FPinOutOutput[i][j] = p.Values[j].GetType() == typeof(T) ? (T)p.Values[j] : GetDefault();
+					}
+					i++;
+				}
+			}
+			else
+			{
+				FPinOutOutput.SliceCount = 0;
+				FPinOutAddress.SliceCount = 0;
+			}
+			FPinOutOnReceive[0] = count > 0;
 		}
 
 		protected abstract T GetDefault();
@@ -143,7 +134,7 @@ namespace VVVV.Nodes.OSC
 
 
 	#region PluginInfo
-	[PluginInfo(Name = "Receive", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
+	[PluginInfo(Name = "Receive", Category = "OSC", Version = "value", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
 	#endregion PluginInfo
 	public class ReceiveValueNode : ReceiveNode<float>
 	{
@@ -153,9 +144,20 @@ namespace VVVV.Nodes.OSC
 		}
 	}
 
+	#region PluginInfo
+	[PluginInfo(Name = "Receive", Category = "OSC", Version = "value, int", Help = "Receive OSC packets from across the graph as ints", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class ReceiveValueIntNode : ReceiveNode<int>
+	{
+		protected override int GetDefault()
+		{
+			return 0;
+		}
+	}
+
 
 	#region PluginInfo
-	[PluginInfo(Name = "Receive", Category = "OSC", Version = "String", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
+	[PluginInfo(Name = "Receive", Category = "OSC", Version = "string", Help = "Receive OSC packets from across the graph as floats", Tags = "", AutoEvaluate = true)]
 	#endregion PluginInfo
 	public class ReceiveStringNode : ReceiveNode<string>
 	{

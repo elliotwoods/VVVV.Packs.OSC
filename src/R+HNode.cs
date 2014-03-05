@@ -21,8 +21,8 @@ namespace VVVV.Nodes.OSC
 	public abstract class ReceiveHoldNode<T> : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
-		[Input("Channel", IsSingle = true, DefaultString = "Rx")]
-		ISpread<string> FPinInChannel;
+		[Input("Input")]
+		ISpread<OSCPacket> FPinInInput;
 
 		[Input("Address")]
 		IDiffSpread<string> FPinInAddress;
@@ -64,29 +64,12 @@ namespace VVVV.Nodes.OSC
 				}
 			}
 		}
-		object FLockPackets = new object();
-		SRComms.Queue FPackets = new SRComms.Queue("Rx");
 		Dictionary<string, Message> FRegister = new Dictionary<string, Message>();
 		#endregion fields & pins
 
 		[ImportingConstructor]
 		public ReceiveHoldNode()
 		{
-			SRComms.MessageSent+=new EventHandler(SRComms_MessageSent);
-		}
-
-		void  SRComms_MessageSent(object sender, EventArgs e)
-		{
-			var q = sender as SRComms.Queue;
-			if (q == null)
-				return;
-
-			if (q.Channel == FPackets.Channel)
-				lock (FLockPackets)
-					foreach (var p in q)
-						FPackets.Add(p);
-
-			SelectAddress();
 		}
 
 		public void Dispose()
@@ -96,9 +79,6 @@ namespace VVVV.Nodes.OSC
 		//called when data for any output pin is requested
 		public void Evaluate(int SpreadMax)
 		{
-			if (FPackets.Channel != FPinInChannel[0])
-				FPackets = new SRComms.Queue(FPinInChannel[0]);
-
 			if (FPinInAddress.IsChanged)
 			{
 				ReassignRegister();
@@ -145,8 +125,13 @@ namespace VVVV.Nodes.OSC
 
 		void SelectAddress()
 		{
-			foreach (var p in FPackets)
+			foreach (var p in FPinInInput)
 			{
+				if (p == null)
+				{
+					continue;
+				}
+
 				if (FRegister.ContainsKey(p.Address))
 				{
 					FRegister[p.Address].New = true;
@@ -159,7 +144,6 @@ namespace VVVV.Nodes.OSC
 					}
 				}
 			}
-			FPackets.Clear();
 		}
 
 		protected abstract T GetDefault();
@@ -172,12 +156,23 @@ namespace VVVV.Nodes.OSC
 	{
 		protected override float GetDefault()
 		{
+			return 0.0f;
+		}
+	}
+
+	#region PluginInfo
+	[PluginInfo(Name = "R+H", Category = "OSC", Version = "value, int", Help = "Receive OSC packets from across the graph as ints and hold them", Tags = "", AutoEvaluate = true)]
+	#endregion PluginInfo
+	public class ReceiveHoldValueIntNode : ReceiveHoldNode<int>
+	{
+		protected override int GetDefault()
+		{
 			return 0;
 		}
 	}
 
 	#region PluginInfo
-	[PluginInfo(Name = "R+H", Category = "OSC", Version = "String", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
+	[PluginInfo(Name = "R+H", Category = "OSC", Version = "string", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
 	#endregion PluginInfo
 	public class ReceiveHoldStringNode : ReceiveHoldNode<string>
 	{
