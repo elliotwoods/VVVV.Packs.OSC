@@ -87,6 +87,8 @@ namespace VVVV.Nodes.OSC
 			FPinOutOutput.SliceCount = FPinInAddress.SliceCount;
 			FPinOutOnReceive.SliceCount = FPinInAddress.SliceCount;
 
+			SelectAddress();
+
 			for (int i = 0; i < FPinInAddress.SliceCount; i++)
 			{
 				if (FPinInAddress[i] == "")

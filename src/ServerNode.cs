@@ -97,7 +97,7 @@ namespace VVVV.Nodes.OSC
 			if (FRunning)
 			{
 				FRunning = false;
-				FThread.Abort();
+				FThread.Join();
 
 				FServer.Close();
 				FServer = null;
