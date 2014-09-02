@@ -20,16 +20,16 @@ namespace VVVV.Nodes.OSC
 {
 
 	#region PluginInfo
-	[PluginInfo(Name = "AsValue", Category = "OSC", Help = "Convert OSC packets into values", Tags = "")]
+	[PluginInfo(Name = "Count", Category = "OSC", Help = "Count incoming packets", Tags = "")]
 	#endregion PluginInfo
-	public class AsValueNode : IPluginEvaluate, IDisposable
+	public class CountNode : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
 		[Input("Input")]
 		ISpread<OSCPacket> FPinInput;
 
-		[Output("Output")]
-		ISpread<ISpread<double>> FPinOutput;
+		[Output("Count")]
+		ISpread<int> FPinOutput;
 
 		[Import]
 		ILogger FLogger;
@@ -37,7 +37,7 @@ namespace VVVV.Nodes.OSC
 		#endregion fields & pins
 
 		[ImportingConstructor]
-		public AsValueNode(IPluginHost host)
+		public CountNode(IPluginHost host)
 		{
 		}
 
@@ -48,29 +48,10 @@ namespace VVVV.Nodes.OSC
 		//called when data for any output pin is requested
 		public void Evaluate(int SpreadMax)
 		{
-			float v;
 			if (FPinInput.SliceCount > 0 && FPinInput[0] != null)
-			{
-				int count = FPinInput.SliceCount;
-				FPinOutput.SliceCount = count;
-
-				int innerCount;
-				for (int i=0; i<count; i++)
-				{
-					innerCount = FPinInput[i].Values.Count;
-					FPinOutput[i].SliceCount = innerCount;
-
-					for (int j = 0; j < innerCount; j++)
-					{
-						if (FPinInput[i].Values[j].GetType() == typeof(float))
-							FPinOutput[i][j] = (float)FPinInput[i].Values[j];
-						else
-							FPinOutput[i][j] = 0;
-					}
-				}
-			}
+				FPinOutput[0] = FPinInput.SliceCount;
 			else
-				FPinOutput.SliceCount = 0;
+				FPinOutput[0] = 0;
 		}
 
 	}
