@@ -134,6 +134,22 @@ namespace VVVV.Nodes.OSC.Splines
 
 			return false;
         }
+
+		public void FlattenHeirarchy()
+		{
+			Dictionary<string, Spline> grandchildren = new Dictionary<string,Spline>();
+			foreach(var child in this.Children) {
+				child.Value.FlattenHeirarchy();
+				foreach(var grandchild in child.Value.Children) {
+					grandchildren.Add(child.Key + "/" + grandchild.Key, grandchild.Value);
+				}
+				child.Value.Children.Clear();
+			}
+			foreach(var grandchild in grandchildren)
+			{
+				this.Children.Add(grandchild.Key, grandchild.Value);
+			}
+		}
     }
 
     #region PluginInfo
@@ -183,6 +199,9 @@ namespace VVVV.Nodes.OSC.Splines
         [Input("Clear", IsBang = true, IsSingle = true)]
         public ISpread<bool> FInClear;
 
+		[Input("Flatten Heirarchy", IsSingle = true)]
+		public ISpread<bool> FInFlatten;
+
         [Output("Output", IsSingle = true)]
         public ISpread<Spline> FOutput;
 
@@ -210,6 +229,10 @@ namespace VVVV.Nodes.OSC.Splines
                 {
                     if (FBuffer.Process(packet))
                     {
+						if (FInFlatten[0])
+						{
+							FBuffer.Root.FlattenHeirarchy();
+						}
 						FOutput[0] = FBuffer.Root;
 						FOutFrame[0] = FBuffer.Frame;
                     }
