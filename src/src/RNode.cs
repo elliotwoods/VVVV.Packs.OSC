@@ -16,7 +16,7 @@ using VVVV.Utils.OSC;
 
 #endregion usings
 
-namespace VVVV.Nodes.OSC
+namespace VVVV.Packs.OSC
 {
 	#region PluginInfo
 	[PluginInfo(Name = "R", Category = "OSC", Help = "Receive OSC packets from across the graph", Tags = "", AutoEvaluate = true)]

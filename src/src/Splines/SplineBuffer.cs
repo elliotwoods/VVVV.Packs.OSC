@@ -13,7 +13,7 @@ using VVVV.Utils.OSC;
 using VVVV.Core.Logging;
 #endregion usings
 
-namespace VVVV.Nodes.OSC.Splines
+namespace VVVV.Packs.OSC.Splines
 {
 	public class UserDataEntry
 	{
@@ -44,7 +44,7 @@ namespace VVVV.Nodes.OSC.Splines
 				inputBuffer = new Spline(false);
 			}
 		}
-        public bool Process(List<string> addressList, ArrayList values)
+        public bool Process(List<string> addressList, ArrayList values, Matrix4x4 transform)
         {
             this.Address = addressList[0];
 
@@ -74,7 +74,11 @@ namespace VVVV.Nodes.OSC.Splines
 						if (values.Count >= 3)
 						{
 							for(int i=0; i<3; i++) {
-								this.inputBuffer.Position[0] = (double) (float) values[i];
+								this.inputBuffer.Position[i] = (double) (float) values[i];
+							}
+							if (transform != null)
+							{
+								this.inputBuffer.Position = transform * this.inputBuffer.Position;
 							}
 						}
 						break;
@@ -104,7 +108,14 @@ namespace VVVV.Nodes.OSC.Splines
 
 						foreach (var value in values)
 						{
-							userDataEntry.Values.Add((double)(float)value);
+							if (value is int)
+							{
+								userDataEntry.Values.Add((double)(int)value);
+							}
+							else if (value is float)
+							{
+								userDataEntry.Values.Add((double)(float)value);
+							}
 						}
 
 						this.inputBuffer.UserData.Add(userDataEntry);
@@ -118,7 +129,15 @@ namespace VVVV.Nodes.OSC.Splines
 							{
 								vertex[j] = (double)(float)values[i * 3 + j];
 							}
-							this.inputBuffer.Vertices.Add(vertex);
+
+							if (transform != null)
+							{
+								this.inputBuffer.Vertices.Add(transform * vertex);
+							}
+							else
+							{
+								this.inputBuffer.Vertices.Add(vertex);
+							}
 						}
 
 						break;
@@ -127,7 +146,7 @@ namespace VVVV.Nodes.OSC.Splines
 						if (!inputBuffer.Children.ContainsKey(childName)) {
 							inputBuffer.Children.Add(childName, new Spline(true));
 						}
-						inputBuffer.Children[childName].Process(localAddress, values);
+						inputBuffer.Children[childName].Process(localAddress, values, transform);
 						break;
                 }
             }
@@ -163,7 +182,7 @@ namespace VVVV.Nodes.OSC.Splines
 			public Spline Root = new Spline(true);
 
             /// Returns true if we got a full frame
-            public bool Process(OSCPacket packet)
+            public bool Process(OSCPacket packet, Matrix4x4 transform)
             {
                 switch (packet.Address)
                 {
@@ -177,7 +196,7 @@ namespace VVVV.Nodes.OSC.Splines
                         //we're in it for the money!
                         var addressList = new List<string>(packet.Address.Split('/'));
                         var values = packet.Values;
-						if (this.Root.Process(addressList, values))
+						if (this.Root.Process(addressList, values, transform))
 						{
 							return true;
 						}
@@ -199,15 +218,14 @@ namespace VVVV.Nodes.OSC.Splines
         [Input("Clear", IsBang = true, IsSingle = true)]
         public ISpread<bool> FInClear;
 
-		[Input("Flatten Heirarchy", IsSingle = true)]
-		public ISpread<bool> FInFlatten;
+		[Input("Transform", IsSingle = true)]
+		public ISpread<Matrix4x4> FInTransform;
 
         [Output("Output", IsSingle = true)]
         public ISpread<Spline> FOutput;
 
 		[Output("Frame", IsSingle = true)]
 		public ISpread<int> FOutFrame;
-
 
         [Import()]
         public ILogger FLogger;
@@ -227,12 +245,8 @@ namespace VVVV.Nodes.OSC.Splines
             {
                 if (packet != null)
                 {
-                    if (FBuffer.Process(packet))
+                    if (FBuffer.Process(packet, FInTransform[0]))
                     {
-						if (FInFlatten[0])
-						{
-							FBuffer.Root.FlattenHeirarchy();
-						}
 						FOutput[0] = FBuffer.Root;
 						FOutFrame[0] = FBuffer.Frame;
                     }
@@ -240,104 +254,6 @@ namespace VVVV.Nodes.OSC.Splines
             }
         }
     }
-
-    #region PluginInfo
-    [PluginInfo(Name = "Spline", Category = "OSC", Version = "Split", Help = "Split a spline", Tags = "")]
-    #endregion PluginInfo
-	public class SplineSplitNode : IPluginEvaluate
-	{
-		[Input("Input")]
-		public ISpread<Spline> FInput;
-
-		[Output("Address")]
-		public ISpread<String> FOutAddress;
-
-		[Output("Position")]
-		public ISpread<Vector3D> FOutPosition;
-
-		[Output("Vertices")]
-		public ISpread<ISpread<Vector3D>> FOutVertices;
-
-		[Output("Color")]
-		public ISpread<RGBAColor> FOutColor;
-
-		[Output("User Data")]
-		public ISpread<ISpread<UserDataEntry>> FOutUserData;
-
-		[Output("Children")]
-		public ISpread<ISpread<Spline>> FOutChildren;
-
-		[Output("Child Address")]
-		public ISpread<ISpread<string>> FOutChildAddress;
-
-		public void Evaluate(int SpreadMax)
-		{
-			if (FInput.SliceCount == 1 && FInput[0] == null)
-			{
-				SpreadMax = 0;
-			}
-
-			FOutAddress.SliceCount = SpreadMax;
-			FOutPosition.SliceCount = SpreadMax;
-			FOutVertices.SliceCount = SpreadMax;
-			FOutColor.SliceCount = SpreadMax;
-			FOutUserData.SliceCount = SpreadMax;
-			FOutChildren.SliceCount = SpreadMax;
-			FOutChildAddress.SliceCount = SpreadMax;
-
-			for (int i = 0; i < SpreadMax; i++)
-			{
-				var spline = FInput[i];
-				if (spline != null)
-				{
-					FOutAddress[i] = spline.Address;
-					FOutPosition[i] = spline.Position;
-					FOutVertices[i].AssignFrom(spline.Vertices);
-					FOutColor[i] = spline.Color;
-					FOutUserData[i].AssignFrom(spline.UserData);
-					FOutChildren[i].AssignFrom(spline.Children.Values);
-					FOutChildAddress[i].AssignFrom(spline.Children.Keys);
-				}
-			}
-		}
-	}
-
-
-	#region PluginInfo
-	[PluginInfo(Name = "UserData", Category = "OSC", Version = "Split", Help = "Split a UserDataEntry", Tags = "")]
-	#endregion PluginInfo
-	public class UserDataSplitNode  : IPluginEvaluate
-	{
-		[Input("Input")]
-		public ISpread<UserDataEntry> FInput;
-
-		[Output("Name")]
-		public ISpread<String> FOutName;
-
-		[Output("Value")]
-		public ISpread<ISpread<double>> FOutValue;
-
-		public void Evaluate(int SpreadMax)
-		{
-			if (FInput.SliceCount == 1 && FInput[0] == null)
-			{
-				SpreadMax = 0;
-			}
-
-			FOutName.SliceCount = SpreadMax;
-			FOutValue.SliceCount = SpreadMax;
-
-			for (int i = 0; i < SpreadMax; i++)
-			{
-				var userDataEntry = FInput[i];
-				if (userDataEntry != null)
-				{
-					FOutName[i] = userDataEntry.Name;
-					FOutValue[i].AssignFrom(userDataEntry.Values);
-				}
-			}
-		}
-	}
 }
    
     

@@ -14,7 +14,7 @@ using VVVV.Core.Logging;
 using Newtonsoft.Json;
 #endregion usings
 
-namespace VVVV.Nodes.OSC.Splines
+namespace VVVV.Packs.OSC.Splines
 {
 	#region PluginInfo
 	[PluginInfo(Name = "Reader", Category = "OSC", Version = "LightBarrier", Help = "Read spline json", Tags = "", AutoEvaluate = true)]

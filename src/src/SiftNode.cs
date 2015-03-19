@@ -16,11 +16,8 @@ using VVVV.Utils.OSC;
 
 #endregion usings
 
-namespace VVVV.Nodes.OSC
+namespace VVVV.Packs.OSC
 {
-
-	enum Filter {Matches, Contains, Starts, Ends, All};
-
 	#region PluginInfo
 	[PluginInfo(Name = "Sift", Category = "OSC", Help = "Sift packets for an address", Tags = "")]
 	#endregion PluginInfo
@@ -34,7 +31,7 @@ namespace VVVV.Nodes.OSC
 		ISpread<string> FPinInAddress;
 
 		[Input("Mode", IsSingle = true)]
-		ISpread<Filter> FPinInFilter;
+		ISpread<Filter.Type> FPinInFilter;
 
 		[Output("Output")]
 		ISpread<OSCPacket> FPinOutput;
@@ -63,28 +60,7 @@ namespace VVVV.Nodes.OSC
 					bool matches = false;
 					for (int j=0; j< FPinInAddress.SliceCount; j++)
 					{
-						switch(FPinInFilter[0])
-						{
-							case Filter.Matches:
-								matches |= FPinInput[i].Address == FPinInAddress[j];
-								break;
-
-							case Filter.Contains:
-								matches |= FPinInput[i].Address.Contains(FPinInAddress[j]);
-								break;
-
-							case Filter.Starts:
-								matches |= FPinInput[i].Address.StartsWith(FPinInAddress[j]);
-								break;
-
-							case Filter.Ends:
-								matches |= FPinInput[i].Address.EndsWith(FPinInAddress[j]);
-								break;
-
-							case Filter.All:
-								matches = true;
-								break;
-						}
+						matches |= Filter.Test(FPinInput[i].Address, FPinInAddress[j], FPinInFilter[0]);
 					}
 					if (matches)
 						FPinOutput.Add<OSCPacket>(FPinInput[i]);

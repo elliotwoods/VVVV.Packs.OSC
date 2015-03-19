@@ -16,7 +16,7 @@ using VVVV.Utils.OSC;
 
 #endregion usings
 
-namespace VVVV.Nodes.OSC
+namespace VVVV.Packs.OSC
 {
 	enum SendMode { Auto, Manual };
 

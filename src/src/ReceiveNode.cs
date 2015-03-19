@@ -16,7 +16,7 @@ using VVVV.Utils.OSC;
 
 #endregion usings
 
-namespace VVVV.Nodes.OSC
+namespace VVVV.Packs.OSC
 {
 	public abstract class ReceiveNode<T> : IPluginEvaluate, IDisposable
 	{
@@ -28,7 +28,7 @@ namespace VVVV.Nodes.OSC
 		ISpread<string> FPinInAddress;
 
 		[Input("Mode", IsSingle=true)]
-		ISpread<Filter> FPinInFilter;
+		ISpread<Filter.Type> FPinInFilter;
 
 		[Output("Output")]
 		ISpread<ISpread<T>> FPinOutOutput;
@@ -53,28 +53,7 @@ namespace VVVV.Nodes.OSC
 			bool matches = false;
 			for (int j=0; j< FPinInAddress.SliceCount; j++)
 			{
-				switch(FPinInFilter[0])
-				{
-					case Filter.Matches:
-						matches |= p.Address == FPinInAddress[j];
-						break;
-
-					case Filter.Contains:
-						matches |= p.Address.Contains(FPinInAddress[j]);
-						break;
-
-					case Filter.Starts:
-						matches |= p.Address.StartsWith(FPinInAddress[j]);
-						break;
-
-					case Filter.Ends:
-						matches |= p.Address.EndsWith(FPinInAddress[j]);
-						break;
-
-					case Filter.All:
-						matches = true;
-						break;
-				}
+				matches |= Filter.Test(p.Address, FPinInAddress[j], FPinInFilter[0]);
 			}
 			return !matches;
 		}
