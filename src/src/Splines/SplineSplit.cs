@@ -146,6 +146,11 @@ namespace VVVV.Packs.OSC.Splines
 					}
 				}
 			}
+
+			//crop to selected
+			SpreadMax = outputIndex;
+			FOutName.SliceCount = SpreadMax;
+			FOutValue.SliceCount = SpreadMax;
 		}
 	}
 }
