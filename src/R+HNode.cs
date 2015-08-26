@@ -84,6 +84,8 @@ namespace VVVV.Nodes.OSC
 				ReassignRegister();
 			}
 
+			SelectAddress();
+
 			FPinOutOutput.SliceCount = FPinInAddress.SliceCount;
 			FPinOutOnReceive.SliceCount = FPinInAddress.SliceCount;
 
@@ -150,7 +152,7 @@ namespace VVVV.Nodes.OSC
 	}
 
 	#region PluginInfo
-	[PluginInfo(Name = "R+H", Category = "OSC", Version = "Value", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
+	[PluginInfo(Name = "R+H", Category = "OSC", Version = "value", Help = "Receive OSC packets from across the graph as floats and hold them", Tags = "", AutoEvaluate = true)]
 	#endregion PluginInfo
 	public class ReceiveHoldValueNode : ReceiveHoldNode<float>
 	{

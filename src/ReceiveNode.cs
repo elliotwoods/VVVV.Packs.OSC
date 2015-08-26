@@ -21,7 +21,7 @@ namespace VVVV.Nodes.OSC
 	public abstract class ReceiveNode<T> : IPluginEvaluate, IDisposable
 	{
 		#region fields & pins
-		[Input("Message")]
+		[Input("Input")]
 		ISpread<OSCPacket> FPinInInput;
 
 		[Input("Address")]
