@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>VVVV.Utils</id>
+    <version>32.0.0</version>
+    <title>VVVV.Utils</title>
+    <authors>vvvv group</authors>
+    <owners>vvvv group</owners>
+    <licenseUrl>https://www.gnu.org/licenses/lgpl-2.1.html</licenseUrl>
+    <projectUrl>http://vvvv.org/</projectUrl>
+    <iconUrl>http://vvvv.org/sites/default/files/home-upload.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The VVVV Utility Library</description>
+    <releaseNotes />
+    <copyright>Copyright © vvvv group 2013. All rights reserved.</copyright>
+    <language />
+    <tags>vvvv</tags>
+  </metadata>
+</package>
